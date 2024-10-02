@@ -1,0 +1,77 @@
+// prisma/schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Lead {
+  id                 String   @id @default(cuid())
+  leadId             String   @unique
+  submissionDate     DateTime @default(now())
+  firstName          String
+  lastName           String
+  phoneNumber        String
+  emailAddress       String?  // Made optional
+  propertyAddress    String
+  city               String
+  state              String
+  zipCode            String
+  isHomeOwner        Boolean
+  propertyValue      Float
+  hasRealtorContract Boolean
+  status             String   @default("pending")
+  additionalNotes    String?
+  submissionCount    Int      @default(1)
+  recording          String?
+  bedrooms           Int?     // Made optional
+  bathrooms          Int?     // Made optional
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  assignments        LeadAssignment[]
+}
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  password        String
+  firstName       String
+  lastName        String
+  role            String
+  isActive        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  leadAssignments LeadAssignment[]
+}
+
+model LeadAssignment {
+  id        String   @id @default(cuid())
+  leadId    String
+  userId    String
+  sentDate  DateTime @default(now())
+  status    String
+  comments  String?
+  lead      Lead     @relation(fields: [leadId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Realtor {
+  id              String   @id @default(cuid())
+  agentCode       String   @unique
+  firstName       String
+  lastName        String
+  phoneNumber     String
+  emailAddress    String
+  brokerage       String
+  state           String
+  centralZipCode  String
+  radius          Int
+  signUpCategory  String
+  teamMembers     Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
