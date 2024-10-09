@@ -46,6 +46,7 @@ model User {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   leadAssignments LeadAssignment[]
+  createdRealtors Realtor[]
 }
 
 model LeadAssignment {
@@ -55,6 +56,7 @@ model LeadAssignment {
   sentDate  DateTime @default(now())
   status    String
   comments  String?
+  callbackTime DateTime?
   lead      Lead     @relation(fields: [leadId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
 }
@@ -72,6 +74,9 @@ model Realtor {
   radius          Int
   signUpCategory  String
   teamMembers     Int?
+  zipCodes        String[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  createdBy       User     @relation(fields: [createdById], references: [id])
+  createdById     String
 }

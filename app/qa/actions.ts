@@ -1,6 +1,6 @@
 'use server'
 
-import { Lead, PrismaClient } from '@prisma/client'
+import { PrismaClient, Lead } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 
 const prisma = new PrismaClient()
@@ -34,8 +34,8 @@ export async function updateLead(lead: Lead) {
         propertyValue: lead.propertyValue,
         hasRealtorContract: lead.hasRealtorContract,
         status: lead.status,
-        recording: lead.recording || null,
-        additionalNotes: lead.additionalNotes || null,
+        recording: lead.recording,
+        additionalNotes: lead.additionalNotes,
       },
     })
     revalidatePath('/qa')
