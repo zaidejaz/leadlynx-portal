@@ -1,43 +1,82 @@
-import Image from "next/image";
-import Link from "next/link";
+"use client"
+
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
-export default function Home() {
+export default function SignIn() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const result = await signIn("credentials", {
+      redirect: false,
+      email,
+      password,
+    });
+
+    if (result?.error) {
+      toast({
+        title: "Error",
+        description: "Invalid email or password. Please try again.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Signed in successfully!",
+      });
+      router.push("/dashboard");
+    }
+  };
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <main className="flex-grow flex items-center justify-center">
-        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-base font-semibold text-primary tracking-wide uppercase">Welcome</h2>
-            <p className="mt-1 text-4xl font-extrabold text-foreground sm:text-5xl sm:tracking-tight lg:text-6xl">
-              Manage Your Real Estate Leads Efficiently
-            </p>
-            <p className="max-w-xl mt-5 mx-auto text-xl text-muted-foreground">
-              Our platform helps you streamline your lead management process, from generation to conversion.
-            </p>
-            <div className="mt-10 flex justify-center space-x-4">
-              <Link href="/auth/signin">
-                <Button size="lg">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/about">
-                <Button variant="outline" size="lg">
-                  Learn More
-                </Button>
-              </Link>
+    <div className="flex items-center justify-center min-h-screen">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Sign In</CardTitle>
+          <CardDescription>Enter your credentials to access your account</CardDescription>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
             </div>
-          </div>
-        </div>
-      </main>
-
-      <footer className="bg-background border-t">
-        <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-muted-foreground text-sm">
-            &copy; 2024 Real Estate Lead Management. All rights reserved.
-          </p>
-        </div>
-      </footer>
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" className="w-full">Sign In</Button>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   );
 }

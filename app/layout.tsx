@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { SessionProvider } from 'next-auth/react'
 import Navigation from "@/components/Navigation";
+import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -29,8 +30,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SessionProvider>
-        <Navigation />
           {children}
+          <Toaster />
         </SessionProvider>
       </body>
     </html>

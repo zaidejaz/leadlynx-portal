@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation';
+import { useToast } from "@/hooks/use-toast"
 
 interface Lead {
   id: string;
@@ -46,7 +47,7 @@ function getStatusColor(status: string) {
     case 'pending': return 'bg-yellow-200 text-yellow-800';
     case 'accepted': return 'bg-green-200 text-green-800';
     case 'rejected': return 'bg-red-200 text-red-800';
-    case 'no_coverage': return 'bg-gray-200 text-gray-800';
+    case 'no_coverage': return 'bg-orange-200 text-orange-800';
     default: return 'bg-blue-200 text-blue-800';
   }
 }
@@ -60,6 +61,8 @@ export default function QADashboard() {
   const [searchTerm, setSearchTerm] = useState('')
   const { data: session, status } = useSession();
   const router = useRouter()
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -92,16 +95,23 @@ export default function QADashboard() {
     }
 
     if (dateFilter) {
-      result = result.filter(lead => lead.submissionDate.toString().startsWith(dateFilter))
+      result = result.filter(lead => {
+        const leadDate = new Date(lead.submissionDate)
+        const filterDate = new Date(dateFilter)
+        return (
+          leadDate.getFullYear() === filterDate.getFullYear() &&
+          leadDate.getMonth() === filterDate.getMonth() &&
+          leadDate.getDate() === filterDate.getDate()
+        )
+      })
     }
 
     if (searchTerm) {
       const lowercasedTerm = searchTerm.toLowerCase()
       result = result.filter(lead =>
-        lead.firstName.toLowerCase().includes(lowercasedTerm) ||
-        lead.lastName.toLowerCase().includes(lowercasedTerm) ||
-        (lead.emailAddress && lead.emailAddress.toLowerCase().includes(lowercasedTerm)) ||
-        lead.phoneNumber.includes(searchTerm)
+        Object.values(lead).some(value => 
+          value && value.toString().toLowerCase().includes(lowercasedTerm)
+        )
       )
     }
 
@@ -129,9 +139,22 @@ export default function QADashboard() {
 
   const handleUpdate = async () => {
     if (editingLead) {
-      await updateLead(editingLead)
-      fetchLeads()
-      setEditingLead(null)
+      const result = await updateLead(editingLead)
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: "Lead updated successfully",
+        })
+        fetchLeads()
+        setEditingLead(null)
+        setIsDialogOpen(false)
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update lead. Please try again.",
+          variant: "destructive",
+        })
+      }
     }
   }
 
@@ -162,29 +185,35 @@ export default function QADashboard() {
             <CardTitle>Filters</CardTitle>
           </CardHeader>
           <CardContent className="flex space-x-4">
-            <Select onValueChange={setStatusFilter} value={statusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="accepted">Accepted</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="no_coverage">No Coverage</SelectItem>
-              </SelectContent>
-            </Select>
-            <Input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-            />
-            <Input
-              type="text"
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="mb-4 flex space-x-4">
+                                <Input
+                                    type="date"
+                                    value={dateFilter}
+                                    onChange={(e) => setDateFilter(e.target.value)}
+                                />
+                                <Select
+                                    value={statusFilter}
+                                    onValueChange={(value) => setStatusFilter(value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Statuses</SelectItem>
+                                        <SelectItem value="pending">Pending</SelectItem>
+                                        <SelectItem value="accepted">Accepted</SelectItem>
+                                        <SelectItem value="rejected">Rejected</SelectItem>
+                                        <SelectItem value="no_coverage">No Coverage</SelectItem>
+                                        <SelectItem value="rejected_overturned">Rejected Overturned</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="Search..."
+                                />
+                            </div>
           </CardContent>
         </Card>
 
