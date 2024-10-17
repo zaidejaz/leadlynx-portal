@@ -1,82 +1,54 @@
-"use client"
+import LoginForm from "@/components/LoginForm";
+import Image from "next/image";
+import Copyright from "@/components/Copyright";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-
-export default function SignIn() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const router = useRouter();
-  const { toast } = useToast();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const result = await signIn("credentials", {
-      redirect: false,
-      email,
-      password,
-    });
-
-    if (result?.error) {
-      toast({
-        title: "Error",
-        description: "Invalid email or password. Please try again.",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: "Signed in successfully!",
-      });
-      router.push("/dashboard");
-    }
-  };
-
+const Login = ( ) => {
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Sign In</CardTitle>
-          <CardDescription>Enter your credentials to access your account</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+    <>
+      <div className="flex w-full items-center overflow-hidden min-h-dvh h-dvh basis-full">
+        <div className="overflow-y-auto flex flex-wrap w-full h-dvh">
+          <div
+            className="lg:block hidden flex-1 overflow-hidden text-[40px] leading-[48px] text-default-600 
+          relative z-[1] bg-default-50"
+          >
+            <div className="max-w-[520px] pt-20 ps-20 ">
+              <h4>
+                <span className="text-default-800 font-bold ms-2">
+                  The Lead Lynx
+                </span>
+              </h4>
+            </div>
+            <div className="absolute left-0 2xl:bottom-[-160px] bottom-[-130px] h-full w-full z-[-1]">
+              <Image
+                src="/images/ils1.svg"
+                alt=""
+                width={300}
+                height={300}
+                className="mb-10 w-full h-full"
+              />
+            </div>
+          </div>
+          <div className="flex-1 relative">
+            <div className=" h-full flex flex-col  dark:bg-default-100 bg-white">
+              <div className="max-w-[524px] md:px-[42px] md:py-[44px] p-7  mx-auto w-full text-2xl text-default-900  mb-3 h-full flex flex-col justify-center">
+                <div className="flex justify-center items-center text-center mb-6 lg:hidden ">
+                </div>
+                <LoginForm />
+                <div className="relative border-b-[#9AA2AF] border-opacity-[16%] border-b pt-6">
+                </div>
+                <div className="max-w-[242px] mx-auto mt-8 w-full">
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+              <div className="text-xs font-normal text-default-500  z-[999] pb-10 text-center">
+                <Copyright />
               </div>
             </div>
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full">Sign In</Button>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
-}
+};
+
+export default Login;
+

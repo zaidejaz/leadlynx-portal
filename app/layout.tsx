@@ -1,23 +1,12 @@
 "use client";
-// import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import "./theme.css";
 import { SessionProvider } from 'next-auth/react'
-import Navigation from "@/components/Navigation";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "@/components/ui/sonner"
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
-
-
+const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({
   children,
@@ -27,11 +16,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+        className={`${inter.className} dashcode-app`}>
         <SessionProvider>
           {children}
           <Toaster />
+          <SonnerToaster />
         </SessionProvider>
       </body>
     </html>
