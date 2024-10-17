@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation';
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
+import { Pagination } from "@/components/ui/pagination"
 
 interface Lead {
   id: string;
@@ -51,6 +52,7 @@ function getStatusColor(status: string) {
     default: return 'bg-blue-200 text-blue-800';
   }
 }
+const LEADS_PER_PAGE = 10;
 
 export default function QADashboard() {
   const [leads, setLeads] = useState<Lead[]>([])
@@ -62,7 +64,8 @@ export default function QADashboard() {
   const { data: session, status } = useSession();
   const router = useRouter()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const { toast } = useToast()
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -71,7 +74,7 @@ export default function QADashboard() {
     } else {
       fetchLeads();
     }
-  }, [session, status, router]);
+  }, [session, status, router, currentPage]);
 
   useEffect(() => {
     filterLeads()
@@ -79,11 +82,16 @@ export default function QADashboard() {
 
   const fetchLeads = async () => {
     try {
-      const fetchedLeads = await getLeads()
-      setLeads(fetchedLeads)
+      const result = await getLeads(currentPage, LEADS_PER_PAGE)
+      if (result.success) {
+        setLeads(result.leads)
+        setTotalPages(Math.ceil(result.totalCount / LEADS_PER_PAGE))
+      } else {
+        toast.error("Failed to fetch leads. Please try again.")
+      }
     } catch (error) {
       console.error('Error fetching leads:', error)
-      // You might want to show an error message to the user here
+      toast.error("An error occurred while fetching leads.")
     }
   }
 
@@ -139,23 +147,25 @@ export default function QADashboard() {
 
   const handleUpdate = async () => {
     if (editingLead) {
-      const result = await updateLead(editingLead)
-      if (result.success) {
-        toast({
-          title: "Success",
-          description: "Lead updated successfully",
-        })
-        fetchLeads()
-        setEditingLead(null)
-        setIsDialogOpen(false)
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to update lead. Please try again.",
-          variant: "destructive",
-        })
+      try {
+        const result = await updateLead(editingLead)
+        if (result.success) {
+          toast.success("Lead updated successfully")
+          fetchLeads()
+          setEditingLead(null)
+          setIsDialogOpen(false)
+        } else {
+          toast.error("Failed to update lead. Please try again.")
+        }
+      } catch (error) {
+        console.error('Error updating lead:', error)
+        toast.error("An error occurred while updating the lead.")
       }
     }
+  }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
   }
 
   if (!session || !allowedRoles.includes(session.user.role)) {
@@ -185,35 +195,33 @@ export default function QADashboard() {
             <CardTitle>Filters</CardTitle>
           </CardHeader>
           <CardContent className="flex space-x-4">
-          <div className="mb-4 flex space-x-4">
-                                <Input
-                                    type="date"
-                                    value={dateFilter}
-                                    onChange={(e) => setDateFilter(e.target.value)}
-                                />
-                                <Select
-                                    value={statusFilter}
-                                    onValueChange={(value) => setStatusFilter(value)}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Statuses</SelectItem>
-                                        <SelectItem value="pending">Pending</SelectItem>
-                                        <SelectItem value="accepted">Accepted</SelectItem>
-                                        <SelectItem value="rejected">Rejected</SelectItem>
-                                        <SelectItem value="no_coverage">No Coverage</SelectItem>
-                                        <SelectItem value="rejected_overturned">Rejected Overturned</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <Input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    placeholder="Search..."
-                                />
-                            </div>
+            <Input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+            />
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => setStatusFilter(value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="accepted">Accepted</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="no_coverage">No Coverage</SelectItem>
+                <SelectItem value="rejected_overturned">Rejected Overturned</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search..."
+            />
           </CardContent>
         </Card>
 
@@ -357,6 +365,13 @@ export default function QADashboard() {
             ))}
           </TableBody>
         </Table>
+        <div className="mt-4">
+          <Pagination
+            totalPages={totalPages}
+            currentPage={currentPage}
+            onPageChange={handlePageChange}
+          />
+        </div>
       </div>
     </div>
   )

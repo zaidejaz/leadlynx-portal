@@ -9,8 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/hooks/use-toast"
-import { Toaster } from "@/components/ui/toaster"
+import { toast } from "sonner"
+import { Pagination } from "@/components/ui/pagination"
 import ZipCodeInput from './ZipCodeInput'
 
 interface Realtor {
@@ -28,13 +28,25 @@ interface Realtor {
     signUpCategory: string;
     teamMembers: number | null;
     zipCodes: string[];
+    contactSigned: boolean;
 }
 
 interface SalesSummary {
+    monthly: number;
     individual: number;
+    individualPro: number;
     team: number;
+    brokerage: number;
     totalRevenue: number;
 }
+
+function toTitleCase(str) {
+  return str.replace(
+    /\w\S*/g,
+    text => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase()
+  );
+}
+const REALTORS_PER_PAGE = 10;
 
 export default function SalesDashboard() {
     const [realtors, setRealtors] = useState<Realtor[]>([])
@@ -42,6 +54,8 @@ export default function SalesDashboard() {
     const [activeView, setActiveView] = useState<'add' | 'view' | 'summary'>('add')
     const [signUpCategory, setSignUpCategory] = useState<string>('individual')
     const [zipCodes, setZipCodes] = useState<string[]>([])
+    const [currentPage, setCurrentPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(1)
     const [formData, setFormData] = useState({
       agentCode: '',
       firstName: '',
@@ -56,7 +70,6 @@ export default function SalesDashboard() {
       password: '',
       confirmPassword: '',
     })
-    const { toast } = useToast()
     const { data: session, status } = useSession()
     const router = useRouter()
   
@@ -69,19 +82,20 @@ export default function SalesDashboard() {
         fetchRealtors()
         fetchSalesSummary()
       }
-    }, [status, session, router])
+    }, [status, session, router, currentPage])
   
     const fetchRealtors = async () => {
       try {
-        const fetchedRealtors = await getRealtors()
-        setRealtors(fetchedRealtors)
+        const result = await getRealtors(currentPage, REALTORS_PER_PAGE)
+        if (result.success) {
+          setRealtors(result.realtors)
+          setTotalPages(Math.ceil(result.totalCount / REALTORS_PER_PAGE))
+        } else {
+          throw new Error(result.error)
+        }
       } catch (err) {
         console.error('Error fetching realtors:', err)
-        toast({
-          title: "Error",
-          description: "Failed to fetch realtors. Please try again later.",
-          variant: "destructive",
-        })
+        toast.error("Failed to fetch realtors. Please try again later.")
       }
     }
   
@@ -91,11 +105,7 @@ export default function SalesDashboard() {
         setSalesSummary(summary)
       } catch (err) {
         console.error('Error fetching sales summary:', err)
-        toast({
-          title: "Error",
-          description: "Failed to fetch sales summary. Please try again later.",
-          variant: "destructive",
-        })
+        toast.error("Failed to fetch sales summary. Please try again later.")
       }
     }
   
@@ -116,10 +126,7 @@ export default function SalesDashboard() {
       try {
         const result = await submitRealtorInfo(submitData)
         if (result.success) {
-          toast({
-            title: "Success",
-            description: "Realtor added successfully!",
-          })
+          toast.success("Realtor added successfully!")
           fetchRealtors()
           fetchSalesSummary()
           // Reset form
@@ -144,14 +151,14 @@ export default function SalesDashboard() {
         }
       } catch (err) {
         console.error('Error submitting realtor info:', err)
-        toast({
-          title: "Error",
-          description: err instanceof Error ? err.message : "Failed to submit realtor information. Please try again.",
-          variant: "destructive",
-        })
+        toast.error(err instanceof Error ? err.message : "Failed to submit realtor information. Please try again.")
       }
     }
   
+    const handlePageChange = (page: number) => {
+      setCurrentPage(page)
+    }
+
     if (!session || session.user.role !== 'sales') {
       return null
     }
@@ -190,8 +197,6 @@ export default function SalesDashboard() {
   
         {/* Main content */}
         <div className="flex-1 p-8 overflow-auto">
-          <Toaster />
-  
           {activeView === 'add' && (
             <Card>
               <CardHeader>
@@ -214,10 +219,13 @@ export default function SalesDashboard() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="individual">Individual</SelectItem>
+                      <SelectItem value="individualPro">Individual Pro</SelectItem>
                       <SelectItem value="team">Team</SelectItem>
+                      <SelectItem value="brokerage">Brokerage</SelectItem>
+                      <SelectItem value="monthly">Monthly Subscription</SelectItem>
                     </SelectContent>
                   </Select>
-                  {signUpCategory === 'team' && (
+                  {(signUpCategory === 'team' || signUpCategory === 'brokerage') && (
                     <Input name="teamMembers" placeholder="Total Team Members" type="number" required value={formData.teamMembers} onChange={handleInputChange} />
                   )}
                   <ZipCodeInput zipCodes={zipCodes} setZipCodes={setZipCodes} />
@@ -229,84 +237,118 @@ export default function SalesDashboard() {
             </Card>
           )}
           
-                {activeView === 'view' && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>View Realtors</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Agent Code</TableHead>
-                                        <TableHead>Name</TableHead>
-                                        <TableHead>Email</TableHead>
-                                        <TableHead>Phone</TableHead>
-                                        <TableHead>Brokerage</TableHead>
-                                        <TableHead>State</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Sign-Up Category</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {realtors.map((realtor) => (
-                                        <TableRow key={realtor.id}>
-                                            <TableCell>{realtor.agentCode}</TableCell>
-                                            <TableCell>{`${realtor.firstName} ${realtor.lastName}`}</TableCell>
-                                            <TableCell>{realtor.emailAddress}</TableCell>
-                                            <TableCell>{realtor.phoneNumber}</TableCell>
-                                            <TableCell>{realtor.brokerage}</TableCell>
-                                            <TableCell>{realtor.state}</TableCell>
-                                            <TableCell>
-                                                <span className={`px-2 py-1 rounded ${realtor.isActive ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}`}>
-                                                    {realtor.isActive ? 'Active' : 'Inactive'}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell>{realtor.signUpCategory}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                )}
+          {activeView === 'view' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>View Realtors</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Agent Code</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Brokerage</TableHead>
+                      <TableHead>State</TableHead>
+                      <TableHead>Central Zip-code</TableHead>
+                      <TableHead>Radius</TableHead>
+                      <TableHead>Sign-Up Category</TableHead>
+                      <TableHead>Zip-codes</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Contact Signed</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {realtors.map((realtor) => (
+                      <TableRow key={realtor.id}>
+                        <TableCell>{realtor.agentCode}</TableCell>
+                        <TableCell>{`${realtor.firstName} ${realtor.lastName}`}</TableCell>
+                        <TableCell>{realtor.phoneNumber}</TableCell>
+                        <TableCell>{realtor.emailAddress}</TableCell>
+                        <TableCell>{realtor.brokerage}</TableCell>
+                        <TableCell>{realtor.state}</TableCell>
+                        <TableCell>{realtor.centralZipCode}</TableCell>
+                        <TableCell>{realtor.radius}</TableCell>
+                        <TableCell>{toTitleCase(realtor.signUpCategory)}</TableCell>
+                        <TableCell>
+                          {realtor.zipCodes.length}
+                          {realtor.zipCodes.length < 50 && (
+                            <span className="text-red-500 ml-2">Zip-codes are less than 50</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded ${realtor.isActive ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}`}>
+                            {realtor.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </TableCell>
+                        <TableCell>{realtor.contactSigned ? 'Yes' : 'No'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <div className="mt-4">
+                  <Pagination
+                    totalPages={totalPages}
+                    currentPage={currentPage}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-                {activeView === 'summary' && salesSummary && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Sales Summary</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Category</TableHead>
-                                        <TableHead>Count</TableHead>
-                                        <TableHead>Revenue</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow>
-                                        <TableCell>Individual ($299)</TableCell>
-                                        <TableCell>{salesSummary.individual}</TableCell>
-                                        <TableCell>${salesSummary.individual * 299}</TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                        <TableCell>Team ($499)</TableCell>
-                                        <TableCell>{salesSummary.team}</TableCell>
-                                        <TableCell>${salesSummary.team * 499}</TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                        <TableCell colSpan={2}><strong>Total Revenue</strong></TableCell>
-                                        <TableCell><strong>${salesSummary.totalRevenue}</strong></TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                )
-                }
-            </div>
+          {activeView === 'summary' && salesSummary && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Sales Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Count</TableHead>
+                      <TableHead>Revenue</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>Monthly Subscription ($80)</TableCell>
+                      <TableCell>{salesSummary.monthly}</TableCell>
+                      <TableCell>${salesSummary.monthly * 80}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>Individual ($299)</TableCell>
+                      <TableCell>{salesSummary.individual}</TableCell>
+                      <TableCell>${salesSummary.individual * 299}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>Individual Pro ($499)</TableCell>
+                      <TableCell>{salesSummary.individualPro}</TableCell>
+                      <TableCell>${salesSummary.individualPro * 499}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>Teams ($4399)</TableCell>
+                      <TableCell>{salesSummary.team}</TableCell>
+                      <TableCell>${salesSummary.team * 4399}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>Brokerage ($10999)</TableCell>
+                      <TableCell>{salesSummary.brokerage}</TableCell>
+                      <TableCell>${salesSummary.brokerage * 10999}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell colSpan={2}><strong>Total Revenue</strong></TableCell>
+                      <TableCell><strong>${salesSummary.totalRevenue}</strong></TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
         </div>
+      </div>
     )
 }

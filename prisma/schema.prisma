@@ -75,6 +75,8 @@ model Realtor {
   signUpCategory  String
   teamMembers     Int?
   zipCodes        String[]
+  isActive        Boolean  @default(false)
+  contactSigned   Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   createdBy       User     @relation(fields: [createdById], references: [id])

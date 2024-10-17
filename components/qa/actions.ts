@@ -5,15 +5,29 @@ import { revalidatePath } from 'next/cache'
 
 const prisma = new PrismaClient()
 
-export async function getLeads() {
+export async function getLeads(page: number = 1, pageSize: number = 10) {
   try {
-    const leads = await prisma.lead.findMany({
-      orderBy: { submissionDate: 'desc' },
-    })
-    return leads
+    const skip = (page - 1) * pageSize;
+    const [leads, totalCount] = await Promise.all([
+      prisma.lead.findMany({
+        orderBy: { submissionDate: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+      prisma.lead.count(),
+    ]);
+
+    return {
+      success: true,
+      leads,
+      totalCount,
+    };
   } catch (error) {
-    console.error('Error fetching leads:', error)
-    throw new Error('Failed to fetch leads')
+    console.error('Error fetching leads:', error);
+    return {
+      success: false,
+      error: 'Failed to fetch leads',
+    };
   }
 }
 
@@ -37,11 +51,11 @@ export async function updateLead(lead: Lead) {
         recording: lead.recording,
         additionalNotes: lead.additionalNotes,
       },
-    })
-    revalidatePath('/qa')
-    return { success: true }
+    });
+    revalidatePath('/qa');
+    return { success: true };
   } catch (error) {
-    console.error('Error updating lead:', error)
-    return { success: false, error: 'Failed to update lead' }
+    console.error('Error updating lead:', error);
+    return { success: false, error: 'Failed to update lead' };
   }
 }
