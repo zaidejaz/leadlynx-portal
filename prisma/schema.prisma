@@ -1,5 +1,4 @@
 // prisma/schema.prisma
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -16,7 +15,7 @@ model Lead {
   firstName          String
   lastName           String
   phoneNumber        String
-  emailAddress       String?  // Made optional
+  emailAddress       String?
   propertyAddress    String
   city               String
   state              String
@@ -28,8 +27,8 @@ model Lead {
   additionalNotes    String?
   submissionCount    Int      @default(1)
   recording          String?
-  bedrooms           Int?     // Made optional
-  bathrooms          Int?     // Made optional
+  bedrooms           Int?
+  bathrooms          Int?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   assignments        LeadAssignment[]
@@ -46,19 +45,20 @@ model User {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   leadAssignments LeadAssignment[]
-  createdRealtors Realtor[]
+  realtorProfile  Realtor? @relation("RealtorProfile")
+  createdRealtors Realtor[] @relation("CreatedRealtors")
 }
 
 model LeadAssignment {
-  id        String   @id @default(cuid())
-  leadId    String
-  userId    String
-  sentDate  DateTime @default(now())
-  status    String
-  comments  String?
+  id           String    @id @default(cuid())
+  leadId       String
+  userId       String
+  sentDate     DateTime  @default(now())
+  status       String
+  comments     String?
   callbackTime DateTime?
-  lead      Lead     @relation(fields: [leadId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  lead         Lead      @relation(fields: [leadId], references: [id])
+  user         User      @relation(fields: [userId], references: [id])
 }
 
 model Realtor {
@@ -77,8 +77,17 @@ model Realtor {
   zipCodes        String[]
   isActive        Boolean  @default(false)
   contactSigned   Boolean  @default(false)
+  contractSent    Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  createdBy       User     @relation(fields: [createdById], references: [id])
+  user            User     @relation("RealtorProfile", fields: [userId], references: [id])
+  userId          String   @unique
+  createdBy       User     @relation("CreatedRealtors", fields: [createdById], references: [id])
   createdById     String
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  message   String
+  createdAt DateTime @default(now())
 }

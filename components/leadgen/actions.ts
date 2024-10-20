@@ -144,24 +144,84 @@ export async function exportLeads() {
   }
 }
 
-export async function getLeadGenMetrics() {
+export async function getLeadGenMetrics(startDate: Date, endDate: Date) {
   try {
-    const totalLeads = await prisma.lead.count();
-    const acceptedLeads = await prisma.lead.count({ where: { status: 'accepted' } });
-    const rejectedLeads = await prisma.lead.count({ where: { status: 'rejected' } });
-    const noCoverageLeads = await prisma.lead.count({ where: { status: 'no_coverage' } });
-    const rejectedOverturnedLeads = await prisma.lead.count({ where: { status: 'rejected_overturned' } });
+    // Fetch metrics from your database based on the date range
+    const metrics = await prisma.lead.groupBy({
+      by: ['status', 'submissionDate'],
+      where: {
+        submissionDate: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      _count: {
+        id: true,
+      },
+    });
 
-    const metrics = {
+    // Process the metrics to calculate daily and aggregate values
+    const dailyMetrics = {};
+    let totalLeads = 0;
+    let acceptedLeads = 0;
+    let rejectedLeads = 0;
+    let noCoverageLeads = 0;
+    let rejectedOverturnedLeads = 0;
+
+    metrics.forEach((metric) => {
+      const date = metric.submissionDate.toISOString().split('T')[0];
+      if (!dailyMetrics[date]) {
+        dailyMetrics[date] = {
+          date,
+          totalLeads: 0,
+          acceptedLeads: 0,
+          rejectedLeads: 0,
+          noCoverageLeads: 0,
+          rejectedOverturnedLeads: 0,
+        };
+      }
+
+      dailyMetrics[date].totalLeads += metric._count.id;
+      totalLeads += metric._count.id;
+
+      switch (metric.status) {
+        case 'accepted':
+          dailyMetrics[date].acceptedLeads += metric._count.id;
+          acceptedLeads += metric._count.id;
+          break;
+        case 'rejected':
+          dailyMetrics[date].rejectedLeads += metric._count.id;
+          rejectedLeads += metric._count.id;
+          break;
+        case 'no_coverage':
+          dailyMetrics[date].noCoverageLeads += metric._count.id;
+          noCoverageLeads += metric._count.id;
+          break;
+        case 'rejected_overturned':
+          dailyMetrics[date].rejectedOverturnedLeads += metric._count.id;
+          rejectedOverturnedLeads += metric._count.id;
+          break;
+      }
+    });
+
+    const conversionRate = totalLeads > 0 ? acceptedLeads / totalLeads : 0;
+
+    const processedMetrics = {
       totalLeads,
       acceptedLeads,
       rejectedLeads,
       noCoverageLeads,
       rejectedOverturnedLeads,
-      conversionRate: acceptedLeads / totalLeads,
+      conversionRate,
+      dailyMetrics: Object.values(dailyMetrics),
     };
 
-    return { success: true, metrics };
+    console.log('Processed metrics:', processedMetrics);
+
+    return {
+      success: true,
+      metrics: processedMetrics,
+    };
   } catch (error) {
     console.error('Error fetching lead gen metrics:', error);
     return { success: false, error: 'Failed to fetch lead gen metrics' };

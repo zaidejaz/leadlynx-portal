@@ -1,15 +1,33 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import LoginForm from "@/components/LoginForm";
 import Image from "next/image";
 import Copyright from "@/components/Copyright";
 
-const Login = ( ) => {
+const Login = () => {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.push('/dashboard');
+    }
+  }, [status, router]);
+
+  if (status === 'authenticated') {
+    return null; // or a loading indicator if you prefer
+  }
+
   return (
     <>
       <div className="flex w-full items-center overflow-hidden min-h-dvh h-dvh basis-full">
         <div className="overflow-y-auto flex flex-wrap w-full h-dvh">
           <div
-            className="lg:block hidden flex-1 overflow-hidden text-[40px] leading-[48px] text-default-600 
-          relative z-[1] bg-default-50"
+            className="lg:block hidden flex-1 overflow-hidden text-[40px] leading-[48px] text-default-600
+            relative z-[1] bg-default-50"
           >
             <div className="max-w-[520px] pt-20 ps-20 ">
               <h4>
@@ -29,8 +47,8 @@ const Login = ( ) => {
             </div>
           </div>
           <div className="flex-1 relative">
-            <div className=" h-full flex flex-col  dark:bg-default-100 bg-white">
-              <div className="max-w-[524px] md:px-[42px] md:py-[44px] p-7  mx-auto w-full text-2xl text-default-900  mb-3 h-full flex flex-col justify-center">
+            <div className=" h-full flex flex-col dark:bg-default-100 bg-white">
+              <div className="max-w-[524px] md:px-[42px] md:py-[44px] p-7 mx-auto w-full text-2xl text-default-900 mb-3 h-full flex flex-col justify-center">
                 <div className="flex justify-center items-center text-center mb-6 lg:hidden ">
                 </div>
                 <LoginForm />
@@ -39,7 +57,7 @@ const Login = ( ) => {
                 <div className="max-w-[242px] mx-auto mt-8 w-full">
                 </div>
               </div>
-              <div className="text-xs font-normal text-default-500  z-[999] pb-10 text-center">
+              <div className="text-xs font-normal text-default-500 z-[999] pb-10 text-center">
                 <Copyright />
               </div>
             </div>
@@ -51,4 +69,3 @@ const Login = ( ) => {
 };
 
 export default Login;
-

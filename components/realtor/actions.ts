@@ -1,11 +1,32 @@
-// app/realtor/actions.ts
 'use server'
+
 import { PrismaClient } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options"
 
 const prisma = new PrismaClient()
+
+export async function getRealtorStatus() {
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== 'realtor' || !session.user.email) {
+    throw new Error('Unauthorized')
+  }
+  try {
+    const realtor = await prisma.realtor.findFirst({
+      where: { emailAddress: session.user.email },
+      select: {
+        isActive: true,
+        signUpCategory: true
+      }
+    })
+    if (!realtor) throw new Error('Realtor not found')
+    return realtor
+  } catch (error) {
+    console.error('Error fetching realtor status:', error)
+    throw new Error('Failed to fetch realtor status')
+  }
+}
 
 export async function getAssignedLeads() {
   const session = await getServerSession(authOptions)
@@ -26,7 +47,12 @@ export async function getAssignedLeads() {
       where: {
         userId: user.id,
         status: {
-          notIn: ['Not interested in selling', 'Resulted in not listing', 'Listed by Homeowner']
+          notIn: [
+            'Not interested in selling', 
+            'Resulted in not listing', 
+            'Listed by Homeowner',
+            'Lead taken by another realtor'  // Add this to exclude these assignments
+          ]
         }
       },
       include: {
@@ -44,8 +70,8 @@ export async function getAssignedLeads() {
       bathrooms: assignment.lead.bathrooms,
       underAgentContract: assignment.lead.hasRealtorContract,
       status: assignment.status,
-      callbackTime: assignment.callbackTime,
       comments: assignment.comments,
+      canChangeStatus: assignment.status !== 'Listing Agreement Signed'  // Add this field
     }))
   } catch (error) {
     console.error('Error fetching assigned leads:', error)
@@ -53,7 +79,7 @@ export async function getAssignedLeads() {
   }
 }
 
-export async function updateLeadStatus(assignmentId: string, newStatus: string, callbackTime?: Date) {
+export async function updateLeadStatus(assignmentId: string, newStatus: string) {
   const session = await getServerSession(authOptions)
   if (!session || session.user.role !== 'realtor' || !session.user.email) {
     throw new Error('Unauthorized')
@@ -75,30 +101,30 @@ export async function updateLeadStatus(assignmentId: string, newStatus: string, 
       })
       if (!assignment) throw new Error('Assignment not found')
 
-      await prisma.leadAssignment.deleteMany({
+      await prisma.leadAssignment.updateMany({
         where: {
           leadId: assignment.leadId,
           id: { not: assignmentId }
+        },
+        data: { 
+          status: 'Lead taken by another realtor'
         }
       })
-      
+    }
+    
+    if (['Not Interested in Selling', 'Resulted in Not Listing', 'Listed by Homeowner'].includes(newStatus)) {
       await prisma.leadAssignment.update({
         where: { id: assignmentId },
         data: { 
           status: newStatus,
-          callbackTime: callbackTime
+          isActive: false
         }
-      })
-    } else if (['Not Interested in Selling', 'Resulted in Not Listing', 'Listed by Homeowner'].includes(newStatus)) {
-      await prisma.leadAssignment.delete({
-        where: { id: assignmentId }
       })
     } else {
       await prisma.leadAssignment.update({
         where: { id: assignmentId },
         data: { 
-          status: newStatus,
-          callbackTime: callbackTime
+          status: newStatus
         }
       })
     }
@@ -143,34 +169,29 @@ export async function addLeadComment(assignmentId: string, comment: string) {
   }
 }
 
-export async function setCallbackTime(assignmentId: string, callbackTime: Date) {
+export async function updateRealtorInfo(field: string, value: boolean | string) {
   const session = await getServerSession(authOptions)
   if (!session || session.user.role !== 'realtor' || !session.user.email) {
     throw new Error('Unauthorized')
   }
   try {
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { id: true }
+    const realtor = await prisma.realtor.findFirst({
+      where: { emailAddress: session.user.email },
     })
 
-    if (!user) {
-      throw new Error('User not found')
+    if (!realtor) {
+      throw new Error('Realtor not found')
     }
 
-    await prisma.leadAssignment.update({
-      where: {
-        id: assignmentId,
-        userId: user.id
-      },
-      data: {
-        callbackTime: callbackTime,
-      }
+    await prisma.realtor.update({
+      where: { id: realtor.id },
+      data: { [field]: value }
     })
+
     revalidatePath('/realtor')
     return { success: true }
   } catch (error) {
-    console.error('Error setting callback time:', error)
-    return { success: false, error: 'Failed to set callback time' }
+    console.error('Error updating realtor info:', error)
+    return { success: false, error: 'Failed to update realtor info' }
   }
 }

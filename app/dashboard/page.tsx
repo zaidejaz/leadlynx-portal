@@ -7,7 +7,8 @@ import QAPage from '@/components/qa/Qa';
 import RealtorPage from '@/components/realtor/Realtor';
 import SupportPage from '@/components/support/Support';
 import SalesPage from '@/components/sales/Sales';
-import SuperAdminPage from '@/components/super-admin/SuperAdmin';
+import SuperAdminPage from '@/components/super-admin1/SuperAdmin';
+import AdminPage from '@/components/admin/components/AdminPage';
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -25,8 +26,10 @@ export default function Dashboard() {
 
   const renderDashboard = () => {
     switch (session.user.role) {
+      case 'super-admin':
+        return <SuperAdminPage />
       case 'admin':
-        return <SuperAdminPage />;
+        return <AdminPage />;
       case 'leadgen':
         return <LeadGenPage />;
       case 'qa':
