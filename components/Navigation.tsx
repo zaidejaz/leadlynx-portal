@@ -23,7 +23,7 @@ export default function Navigation() {
                 <Button onClick={() => signOut()}>Sign out</Button>
               </>
             ) : (
-              <Link href="/auth/signin">
+              <Link href="/">
                 <Button>Sign in</Button>
               </Link>
             )}

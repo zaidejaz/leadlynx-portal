@@ -1,6 +1,7 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pagination } from "@/components/ui/pagination";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Lead {
     id: string;
@@ -51,62 +52,67 @@ export const LeadTable: React.FC<LeadTableProps> = ({ leads, currentPage, totalP
     }
 
     return (
-        <>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Lead ID</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Phone</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Address</TableHead>
-                        <TableHead>Home Owner</TableHead>
-                        <TableHead>Property Value</TableHead>
-                        <TableHead>Realtor Contract</TableHead>
-                        <TableHead>Bedrooms</TableHead>
-                        <TableHead>Bathrooms</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Submission Date</TableHead>
-                        <TableHead>Recording</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {leads.map((lead) => (
-                        <TableRow key={lead.id}>
-                            <TableCell>{lead.leadId}</TableCell>
-                            <TableCell>{`${lead.firstName} ${lead.lastName}`}</TableCell>
-                            <TableCell>{lead.phoneNumber}</TableCell>
-                            <TableCell>{lead.emailAddress}</TableCell>
-                            <TableCell>{`${lead.propertyAddress}, ${lead.city}, ${lead.state} ${lead.zipCode}`}</TableCell>
-                            <TableCell>{lead.isHomeOwner ? 'Yes' : 'No'}</TableCell>
-                            <TableCell>${lead.propertyValue.toLocaleString()}</TableCell>
-                            <TableCell>{lead.hasRealtorContract ? 'Yes' : 'No'}</TableCell>
-                            <TableCell>{lead.bedrooms}</TableCell>
-                            <TableCell>{lead.bathrooms}</TableCell>
-                            <TableCell>
-                                <span className={`px-2 py-1 rounded ${getStatusColor(lead.status)}`}>
-                                    {toTitleCase(lead.status)}
-                                </span>
-                            </TableCell>
-                            <TableCell>{new Date(lead.submissionDate).toLocaleString()}</TableCell>
-                            <TableCell>
-                                {lead.recording ? (
-                                    <a href={lead.recording} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                                        View Recording
-                                    </a>
-                                ) : (
-                                    <span className="text-gray-500">No recording</span>
-                                )}
-                            </TableCell>
+        <Card className="mb-8">
+            <CardHeader>
+                <CardTitle>Leads</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Lead ID</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Phone</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Address</TableHead>
+                            <TableHead>Home Owner</TableHead>
+                            <TableHead>Property Value</TableHead>
+                            <TableHead>Realtor Contract</TableHead>
+                            <TableHead>Bedrooms</TableHead>
+                            <TableHead>Bathrooms</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Submission Date</TableHead>
+                            <TableHead>Recording</TableHead>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-            <Pagination
-                totalPages={totalPages}
-                currentPage={currentPage}
-                onPageChange={onPageChange}
-            />
-        </>
+                    </TableHeader>
+                    <TableBody>
+                        {leads.map((lead) => (
+                            <TableRow key={lead.id}>
+                                <TableCell>{lead.leadId}</TableCell>
+                                <TableCell>{`${lead.firstName} ${lead.lastName}`}</TableCell>
+                                <TableCell>{lead.phoneNumber}</TableCell>
+                                <TableCell>{lead.emailAddress}</TableCell>
+                                <TableCell>{`${lead.propertyAddress}, ${lead.city}, ${lead.state} ${lead.zipCode}`}</TableCell>
+                                <TableCell>{lead.isHomeOwner ? 'Yes' : 'No'}</TableCell>
+                                <TableCell>${lead.propertyValue.toLocaleString()}</TableCell>
+                                <TableCell>{lead.hasRealtorContract ? 'Yes' : 'No'}</TableCell>
+                                <TableCell>{lead.bedrooms}</TableCell>
+                                <TableCell>{lead.bathrooms}</TableCell>
+                                <TableCell>
+                                    <span className={`px-2 py-1 rounded ${getStatusColor(lead.status)}`}>
+                                        {toTitleCase(lead.status)}
+                                    </span>
+                                </TableCell>
+                                <TableCell>{new Date(lead.submissionDate).toLocaleString()}</TableCell>
+                                <TableCell>
+                                    {lead.recording ? (
+                                        <a href={lead.recording} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                            View Recording
+                                        </a>
+                                    ) : (
+                                        <span className="text-gray-500">No recording</span>
+                                    )}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                <Pagination
+                    totalPages={totalPages}
+                    currentPage={currentPage}
+                    onPageChange={onPageChange}
+                />
+            </CardContent>
+        </Card>
     );
 };

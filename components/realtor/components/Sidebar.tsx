@@ -4,11 +4,11 @@ import LogoutButton from '@/components/LogoutButton';
 import Image from "next/image"
 
 interface SidebarProps {
-    activeView: 'assigned-leads'
-    setActiveView: (view: 'assigned-leads') => void
-}
+    activeView: 'assigned-leads' | 'profile';
+    onViewChange: (view: 'assigned-leads' | 'profile') => void;
+  }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange }) => {
     return (
         <div className="w-64 bg-white shadow-md">
             <div className="p-4">
@@ -20,9 +20,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) =
                     <Button
                         variant={activeView === 'assigned-leads' ? 'default' : 'ghost'}
                         className="w-full justify-start mb-2"
-                        onClick={() => setActiveView('assigned-leads')}
+                        onClick={() => onViewChange('assigned-leads')}
                     >
                         Assigned Prospects
+                    </Button>
+                    <Button
+                        variant={activeView === 'profile' ? 'default' : 'ghost'}
+                        className="w-full justify-start"
+                        onClick={() => onViewChange('profile')}
+                    >
+                        Profile
                     </Button>
                     <LogoutButton />
                 </nav>

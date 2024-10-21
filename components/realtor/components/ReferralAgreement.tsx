@@ -1,29 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MonthlyReferralAgreement } from './MonthlyReferralAgreement';
 import { OneTimeReferralAgreement } from './OneTimeReferralAgreement';
-import { updateRealtorInfo } from '../actions';
 import { toast } from "sonner";
 
 interface ReferralAgreementProps {
   signUpCategory: string;
-  initialContractSent: boolean;
+  contractSent: boolean;
+  onConfirmSent: () => Promise<void>;
 }
 
-export const ReferralAgreement: React.FC<ReferralAgreementProps> = ({ 
-  signUpCategory, 
-  initialContractSent 
+export const ReferralAgreement: React.FC<ReferralAgreementProps> = ({
+  signUpCategory,
+  contractSent,
+  onConfirmSent
 }) => {
-  const [contractSent, setContractSent] = useState(initialContractSent);
+  console.log("ReferralAgreement props:", { signUpCategory, contractSent }) // Debug log
+
+  useEffect(() => {
+    console.log("ReferralAgreement mounted/updated with:", { signUpCategory, contractSent }) // Debug log
+  }, [signUpCategory, contractSent])
 
   const handleConfirmSent = async () => {
     try {
-      const result = await updateRealtorInfo('contractSent', true);
-      if (result.success) {
-        setContractSent(true);
-        toast.success("Contract status updated successfully.");
-      } else {
-        throw new Error(result.error || 'Failed to update contract status');
-      }
+      await onConfirmSent();
+      toast.success("Contract status updated successfully.");
     } catch (error) {
       console.error('Error updating contract status:', error);
       toast.error("Failed to update contract status. Please try again.");

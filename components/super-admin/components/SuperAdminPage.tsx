@@ -251,10 +251,6 @@ export default function SuperAdminPage() {
     }
   };
 
-  if (!session || !allowedRoles.includes(session.user.role)) {
-    return null;
-  }
-
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar activeView={activeView} onViewChange={setActiveView} />

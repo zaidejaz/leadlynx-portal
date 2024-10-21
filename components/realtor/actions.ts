@@ -17,7 +17,8 @@ export async function getRealtorStatus() {
       where: { emailAddress: session.user.email },
       select: {
         isActive: true,
-        signUpCategory: true
+        signUpCategory: true,
+        contractSent: true  
       }
     })
     if (!realtor) throw new Error('Realtor not found')
@@ -195,3 +196,4 @@ export async function updateRealtorInfo(field: string, value: boolean | string) 
     return { success: false, error: 'Failed to update realtor info' }
   }
 }
+

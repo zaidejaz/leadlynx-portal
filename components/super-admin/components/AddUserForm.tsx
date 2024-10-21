@@ -76,6 +76,7 @@ const AddUserForm = () => {
                             <SelectValue placeholder="Select Role" />
                         </SelectTrigger>
                         <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
                             <SelectItem value="support">Support</SelectItem>
                             <SelectItem value="qa">QA</SelectItem>
                             <SelectItem value="leadgen">Leadgen</SelectItem>

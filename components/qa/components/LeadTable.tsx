@@ -1,13 +1,13 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Lead } from '../types';
+import { LeadQA } from '../types';
 import { LeadEditDialog } from './LeadEditDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface LeadTableProps {
-  leads: Lead[];
-  onEditLead: (lead: Lead) => void;
-  editingLead: Lead | null;
+  leads: LeadQA[];
+  onEditLead: (lead: LeadQA) => void;
+  editingLead: LeadQA | null;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   onUpdate: () => void;
 }

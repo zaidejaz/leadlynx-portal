@@ -16,7 +16,7 @@ export default function Unauthorized() {
           <Link href="/">
             <Button>Return to Home</Button>
           </Link>
-          <Link href="/auth/signin">
+          <Link href="/">
             <Button>Signin</Button>
           </Link>
           </div>

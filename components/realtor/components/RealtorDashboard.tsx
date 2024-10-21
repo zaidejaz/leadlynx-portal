@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import Script from 'next/script'
 import { getAssignedLeads, updateLeadStatus, addLeadComment, getRealtorStatus, updateRealtorInfo } from '../actions'
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -13,6 +14,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Sidebar } from './Sidebar'
 import { ReferralAgreement } from './ReferralAgreement'
+import { RealtorProfile } from './RealtorProfile'
+import { Loader } from 'lucide-react'
+
+interface RealtorStatus {
+  isActive: boolean;
+  signUpCategory: string;
+  contractSent: boolean;
+}
 
 interface Lead {
   id: string;
@@ -28,6 +37,19 @@ interface Lead {
   canChangeStatus: boolean;
 }
 
+// Custom hook to load script
+const useScript = (url: string) => {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = url;
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    }
+  }, [url]);
+};
+
 export default function RealtorDashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -35,8 +57,11 @@ export default function RealtorDashboard() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [newStatus, setNewStatus] = useState<string>('')
   const [comment, setComment] = useState<string>('')
-  const [realtorStatus, setRealtorStatus] = useState<{ isActive: boolean; signUpCategory: string; contractSent: boolean }>({ isActive: false, signUpCategory: '', contractSent: false })
-  const [activeView, setActiveView] = useState<'assigned-leads'>('assigned-leads');
+  const [realtorStatus, setRealtorStatus] = useState<RealtorStatus | null>(null)
+  const [activeView, setActiveView] = useState<'assigned-leads' | 'profile'>('assigned-leads');
+
+   // Load the chat widget script
+   useScript("https://widgets.leadconnectorhq.com/loader.js");
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -96,8 +121,8 @@ export default function RealtorDashboard() {
     try {
       const result = await updateRealtorInfo('contractSent', true);
       if (result.success) {
-        setRealtorStatus(prev => ({ ...prev, contractSent: true }));
         toast.success("Contract status updated successfully.");
+        await fetchRealtorStatus(); // Fetch the updated status from the database
       } else {
         throw new Error(result.error || 'Failed to update contract status');
       }
@@ -107,8 +132,8 @@ export default function RealtorDashboard() {
     }
   };
 
-  if (status === 'loading') {
-    return <div>Loading...</div>
+  if (status === 'loading' || realtorStatus === null) {
+    return <Loader/>
   }
 
   if (!session || session.user.role !== 'realtor') {
@@ -122,9 +147,12 @@ export default function RealtorDashboard() {
         {(!realtorStatus.isActive) ? (
           <ReferralAgreement
             signUpCategory={realtorStatus.signUpCategory}
-            initialContractSent={realtorStatus.contractSent}
-            onContractSent={handleContractSent}
-          />) : (
+            contractSent={realtorStatus.contractSent}
+            onConfirmSent={handleContractSent}
+          />
+        ) : activeView === 'profile' ? (
+          <RealtorProfile />
+        ) : (
           <Card>
             <CardHeader>
               <CardTitle>Your Assigned Leads</CardTitle>
@@ -210,8 +238,15 @@ export default function RealtorDashboard() {
                 </TableBody>
               </Table>
             </CardContent>
-          </Card>)}
+          </Card>
+        )}
       </div>
+      <Script
+        src="https://widgets.leadconnectorhq.com/loader.js"
+        data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+        data-widget-id="6714ada59d106a21f50fe692"
+        strategy="lazyOnload"
+      />
     </div>
   )
 }

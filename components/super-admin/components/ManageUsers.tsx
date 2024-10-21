@@ -66,24 +66,51 @@ export default function UserManagement() {
         setCurrentPage(1);
     };
 
+    const handleUpdateUserRole = async (userId: string, role: string) => {
+        try {
+            const result = await updateUserRole({ userId, role });
+            if (result.success) {
+                fetchUsers();
+            } else {
+                console.error('Failed to update user role:', result.error);
+            }
+        } catch (error) {
+            console.error('Error updating user role:', error);
+        }
+    };
+
     const handleUpdateUserStatus = async (userId: string, isActive: boolean) => {
         try {
             const result = await updateUserStatus({ userId, isActive: !isActive });
             if (result.success) {
-                toast({
-                    title: "Success",
-                    description: "Status updated successfully.",
-                });
                 fetchUsers();
             } else {
+                console.error('Failed to update user status:', result.error);
+            }
+        } catch (error) {
+            console.error('Error updating user status:', error);
+        }
+    };
+
+    const handleDeleteUser = async (userId: string) => {
+        try {
+            const result = await deleteUser({ userId });
+            if (result.success) {
+                fetchUsers();
+                toast({
+                    title: "Success",
+                    description: "User deleted successfully.",
+                });
+            } else {
+                console.error('Failed to delete user:', result.error);
                 toast({
                     title: "Error",
-                    description: "There was error updating status.",
+                    description: "There was error deleting user.",
                     variant: "destructive",
                 });
             }
         } catch (error) {
-            console.error('Error updating user status:', error);
+            console.error('Error deleting user:', error);
         }
     };
 
@@ -138,7 +165,20 @@ export default function UserManagement() {
                                     <TableCell>{`${user.firstName} ${user.lastName}`}</TableCell>
                                     <TableCell>{user.email}</TableCell>
                                     <TableCell>
-                                        {user.role}
+                                        <Select onValueChange={(value) => handleUpdateUserRole(user.id, value)} defaultValue={user.role}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select Role" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="admin">Admin</SelectItem>
+                                                <SelectItem value="realtor">Realtor</SelectItem>
+                                                <SelectItem value="support">Support</SelectItem>
+                                                <SelectItem value="qa">QA</SelectItem>
+                                                <SelectItem value="leadgen">Leadgen</SelectItem>
+                                                <SelectItem value="sales">Sales</SelectItem>
+
+                                            </SelectContent>
+                                        </Select>
                                     </TableCell>
                                     <TableCell>
                                         <Button
@@ -146,6 +186,14 @@ export default function UserManagement() {
                                             variant={user.isActive ? "default" : "destructive"}
                                         >
                                             {user.isActive ? 'Active' : 'Inactive'}
+                                        </Button>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Button
+                                            onClick={() => handleDeleteUser(user.id)}
+                                            variant="destructive"
+                                        >
+                                            Delete
                                         </Button>
                                     </TableCell>
                                 </TableRow>
