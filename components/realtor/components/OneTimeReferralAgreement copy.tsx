@@ -1,18 +1,18 @@
 import React, { useRef } from 'react';
 import { AgreementLayout } from './AgreementLayout';
 
-interface MonthlyReferralAgreementProps {
+interface OneTimeReferralAgreementProps {
   onConfirmSent: () => void;
   contractSent: boolean;
 }
 
-export const MonthlyReferralAgreement: React.FC<MonthlyReferralAgreementProps> = ({ onConfirmSent, contractSent }) => {
+export const OneTimeReferralAgreement: React.FC<OneTimeReferralAgreementProps> = ({ onConfirmSent, contractSent }) => {
   const pdfRef = useRef<HTMLObjectElement>(null);
 
   const handleDownload = () => {
     const link = document.createElement('a');
-    link.href = '/Monthly Referral Agreement.pdf';
-    link.download = 'Monthly Referral Agreement.pdf';
+    link.href = '/One Time Referral Agreement.pdf';
+    link.download = 'One Time Referral Agreement.pdf';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -29,7 +29,7 @@ export const MonthlyReferralAgreement: React.FC<MonthlyReferralAgreementProps> =
         <div className="h-[700px] overflow-auto">
           <object
             ref={pdfRef}
-            data={`/Monthly Referral Agreement.pdf#zoom=100`}
+            data={`/Lead Lynx Referral Agreement.pdf#zoom=100`}
             type="application/pdf"
             width="100%"
             height="100%"
