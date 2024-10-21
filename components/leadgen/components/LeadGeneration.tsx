@@ -153,9 +153,6 @@ export default function LeadGeneration() {
                 title: "Success",
                 description: `Lead created successfully with ID: ${result.leadId}`,
             });
-            if (formRef.current) {
-                formRef.current.reset();
-            }
             fetchLeads();
         } else {
             toast({
