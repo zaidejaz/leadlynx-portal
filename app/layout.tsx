@@ -16,9 +16,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
 
-  // useEffect(() => {
-  //   startBackgroundTasks();
-  // }, []);
+  useEffect(() => {
+    startBackgroundTasks();
+  }, []);
 
   return (
     <html lang="en">
