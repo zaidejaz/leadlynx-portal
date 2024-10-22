@@ -15,30 +15,30 @@ const allowedRoles = ['admin', 'leadgen'];
 const LEADS_PER_PAGE = 100;
 
 export default function LeadGeneration() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const { toast } = useToast();
-  const [activeView, setActiveView] = useState<'add' | 'view' | 'report'>('add');
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
-  const [dateFilter, setDateFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+    const { data: session, status } = useSession();
+    const router = useRouter();
+    const { toast } = useToast();
+    const [activeView, setActiveView] = useState<'add' | 'view' | 'report'>('add');
+    const [leads, setLeads] = useState<Lead[]>([]);
+    const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
+    const [dateFilter, setDateFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    if (status === 'loading') return;
-    if (!session || !allowedRoles.includes(session.user.role)) {
-      router.push('/unauthorized');
-    } else {
-      fetchLeads();
-    }
-  }, [session, status, router]);
+    useEffect(() => {
+        if (status === 'loading') return;
+        if (!session || !allowedRoles.includes(session.user.role)) {
+            router.push('/unauthorized');
+        } else {
+            fetchLeads();
+        }
+    }, [session, status, router]);
 
-  useEffect(() => {
-    filterLeads();
-  }, [leads, dateFilter, statusFilter, searchTerm]);
+    useEffect(() => {
+        filterLeads();
+    }, [leads, dateFilter, statusFilter, searchTerm]);
 
     const fetchLeads = async () => {
         const result = await getLeads(currentPage, LEADS_PER_PAGE);
@@ -54,8 +54,18 @@ export default function LeadGeneration() {
         }
     };
 
-    const handlePageChange = (page: number) => {
-        setCurrentPage(page);
+    const handlePageChange = async (page: number) => {
+        try {
+            const result = await getLeads(page, LEADS_PER_PAGE);
+            if (result.success) {
+                setLeads(result.leads);
+                setCurrentPage(page);
+                setTotalPages(result.totalPages);
+            }
+        } catch (error) {
+            console.error('Error changing page:', error);
+            toast.error("Failed to load page");
+        }
     };
 
     const handleImportCSV = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,7 +131,7 @@ export default function LeadGeneration() {
         if (searchTerm) {
             const lowercasedTerm = searchTerm.toLowerCase();
             result = result.filter(lead =>
-                Object.values(lead).some(value => 
+                Object.values(lead).some(value =>
                     value && value.toString().toLowerCase().includes(lowercasedTerm)
                 )
             );
@@ -166,35 +176,35 @@ export default function LeadGeneration() {
 
     if (!session || !allowedRoles.includes(session.user.role)) {
         return null;
-      }
-    
-      return (
-        <div className="flex h-screen bg-gray-100">
-          <Sidebar activeView={activeView} onViewChange={setActiveView} />
-          <div className="flex-1 p-8 overflow-auto">
-            {activeView === 'add' && <LeadForm onSubmit={handleCreateLead} />}
-            {activeView === 'view' && (
-              <>
-                <LeadFilters
-                  dateFilter={dateFilter}
-                  statusFilter={statusFilter}
-                  searchTerm={searchTerm}
-                  onDateFilterChange={setDateFilter}
-                  onStatusFilterChange={setStatusFilter}
-                  onSearchTermChange={setSearchTerm}
-                  onImportCSV={handleImportCSV}
-                  onExportCSV={handleExportCSV}
-                />
-                <LeadTable
-                  leads={filteredLeads}
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
-                />
-              </>
-            )}
-            {activeView === 'report' && <LeadGenReporting />}
-          </div>
-        </div>
-      );
     }
+
+    return (
+        <div className="flex h-screen bg-gray-100">
+            <Sidebar activeView={activeView} onViewChange={setActiveView} />
+            <div className="flex-1 p-8 overflow-auto">
+                {activeView === 'add' && <LeadForm onSubmit={handleCreateLead} />}
+                {activeView === 'view' && (
+                    <>
+                        <LeadFilters
+                            dateFilter={dateFilter}
+                            statusFilter={statusFilter}
+                            searchTerm={searchTerm}
+                            onDateFilterChange={setDateFilter}
+                            onStatusFilterChange={setStatusFilter}
+                            onSearchTermChange={setSearchTerm}
+                            onImportCSV={handleImportCSV}
+                            onExportCSV={handleExportCSV}
+                        />
+                        <LeadTable
+                            leads={leads}
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                        />
+                    </>
+                )}
+                {activeView === 'report' && <LeadGenReporting />}
+            </div>
+        </div>
+    );
+}
