@@ -12,7 +12,7 @@ import { Sidebar } from './Sidebar';
 import { LeadQA } from '../types';
 
 const allowedRoles = ['admin', 'qa'];
-const LEADS_PER_PAGE = 10;
+const LEADS_PER_PAGE = 100;
 
 export default function QADashboard() {
   const [leads, setLeads] = useState<LeadQA[]>([]);

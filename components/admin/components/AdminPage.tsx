@@ -23,7 +23,7 @@ import { NotificationList } from '@/components/support/components/NotificationLi
 import { getNotifications } from '@/components/support/actions';
 
 const allowedRoles = ['admin'];
-const LEADS_PER_PAGE = 10;
+const LEADS_PER_PAGE = 100;
 
 type AdminView = 'add-user' | 'manage-users' | 'add-lead' | 'view-leads' | 'lead-report' | 'add-realtor' | 'view-realtors' | 'all-sales-summary' | 'notifications';
 
