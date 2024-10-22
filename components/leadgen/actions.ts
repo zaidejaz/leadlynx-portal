@@ -48,25 +48,28 @@ export async function createLead(formData: FormData) {
 
 export async function getLeads(page: number, perPage: number) {
   try {
+    const skip = (page - 1) * perPage;
     const totalCount = await prisma.lead.count();
+    
     const leads = await prisma.lead.findMany({
       orderBy: { submissionDate: 'desc' },
-      skip: (page - 1) * perPage,
+      skip: skip,  // Make sure this is being used
       take: perPage,
     });
     
-    const formattedLeads = leads.map(lead => ({
-      ...lead,
-      submissionDate: new Date(lead.submissionDate).toLocaleString(),
-      isHomeOwner: lead.isHomeOwner ? 'Yes' : 'No',
-      hasRealtorContract: lead.hasRealtorContract ? 'Yes' : 'No',
-    }));
+    return { 
+      success: true, 
+      leads, 
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / perPage)
+    };
+
     
-    return { success: true, leads: formattedLeads, totalCount };
   } catch (error) {
     console.error('Error fetching leads:', error);
-    return { success: false, error: 'Failed to fetch leads' };
-  }
+    return { success: false, error: 'Failed to fetch leads' };
+  }
 }
 
 export async function importLeads(formData: FormData) {
