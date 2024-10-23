@@ -32,7 +32,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
         assignments: ''
     });
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const itemsPerPage = 100;
 
     // Apply filters
     const filteredLeads = leads.filter(lead => {
